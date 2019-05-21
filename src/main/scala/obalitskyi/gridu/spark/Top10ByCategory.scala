@@ -14,10 +14,13 @@ class Top10ByCategory {
 
       // RDD
       val categoryCounted = events.rdd.map(r => (r.getString(3), 1)).reduceByKey(_ + _)
-      val top10ByCategoryRDD = categoryCounted.top(10)(Ordering.by(_._2)).sortBy(_._2)(Ordering.Int.reverse)
+      val top10ByCategory = categoryCounted.top(10)(Ordering.by(_._2)).sortBy(_._2)(Ordering.Int.reverse)
 
       val tableRDD = "top10ByCategoryRDD"
       // to use sparks jdbc method
-      JDBCMysqlWriter.writeDown(spark.createDataFrame(top10ByCategoryRDD), tableRDD)
+      val top10ByCategoryRDD = spark.createDataFrame(top10ByCategory)
+      top10ByCategoryRDD.coalesce(1)
+
+      JDBCMysqlWriter.writeDown(top10ByCategoryRDD, tableRDD)
     }
 }

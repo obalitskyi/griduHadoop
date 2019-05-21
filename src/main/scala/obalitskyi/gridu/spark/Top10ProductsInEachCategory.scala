@@ -13,6 +13,9 @@ class Top10ProductsInEachCategory {
       " (select product, category, count(*) as frequency from events group by product, category) ev) ranked where ranked.rank <= 10" +
       " order by category, frequency desc")
 
+    // repartition from 200 to 3
+    top10ProductsInEachCategorySQL.repartition(3)
+
     JDBCMysqlWriter.writeDown(top10ProductsInEachCategorySQL, tableSQL)
 
     // DF
@@ -30,10 +33,14 @@ class Top10ProductsInEachCategory {
       .where("rank <= 10")
       .orderBy(col("category"), desc("frequency"))
 
+    // repartition from 200 to 3
+    top10ProductsInEachCategoryDF.repartition(3)
+
     JDBCMysqlWriter.writeDown(top10ProductsInEachCategoryDF, tableDF)
 
 
     // RDD
+
     val tableRDD = "top10ProductsInEachCategoryRDD"
     val prodAndCategoryCounted = events.rdd.map(r => ((r.getString(0), r.getString(3)), 1L)).reduceByKey(_ + _)
 
@@ -50,6 +57,8 @@ class Top10ProductsInEachCategory {
     val top10ProductsInEachCategoryRDD = keyedByCategory.aggregateByKey(zeroVal)(agg, merge).flatMapValues(_.iterator)
       .map(e => (e._1, e._2._1, e._2._2))
       .sortBy(e => (e._1, -e._3))
+
+    top10ProductsInEachCategoryRDD.repartition(3)
 
     JDBCMysqlWriter.writeDown(spark.createDataFrame(top10ProductsInEachCategoryRDD), tableRDD)
   }

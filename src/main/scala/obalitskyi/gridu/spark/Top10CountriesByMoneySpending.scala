@@ -16,7 +16,6 @@ class Top10CountriesByMoneySpending {
 
     JDBCMysqlWriter.writeDown(top10CountriesByMoneySpendingSQL, tableSQL)
 
-
     // RDD
     val ipB = spark.sparkContext.broadcast(ip.rdd.map(r => (r.getString(0), r.getString(1)))
       .filter(t => t._1 != null && t._2 != null).collectAsMap())
@@ -33,10 +32,14 @@ class Top10CountriesByMoneySpending {
 
     val countryTotalSum = countryPrice.reduceByKey(_ + _)
 
-    val top10CountriesByMoneySpendingRDD = countryTotalSum.top(10)(Ordering.by(_._2))
+    val top10CountriesByMoneySpending = countryTotalSum.top(10)(Ordering.by(_._2))
+
+    val top10CountriesByMoneySpendingRDD = spark.createDataFrame(top10CountriesByMoneySpending)
+
+    top10CountriesByMoneySpendingRDD.coalesce(1)
 
     val tableRDD = "top10CountriesByMoneySpendingRDD"
     // in order to use jdbc method
-    JDBCMysqlWriter.writeDown(spark.createDataFrame(top10CountriesByMoneySpendingRDD), tableRDD)
+    JDBCMysqlWriter.writeDown(top10CountriesByMoneySpendingRDD, tableRDD)
   }
 }

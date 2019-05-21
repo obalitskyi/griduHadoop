@@ -38,14 +38,24 @@ object App {
     val top10ProductsInEachCategory = new Top10ProductsInEachCategory()
     val top10CountriesByMoneySpending = new Top10CountriesByMoneySpending()
 
+    events.cache()
+
     args(3) match {
       case u if u.equals("1") || u.toLowerCase().contains("top10bycategory") =>
         top10ByCategory.run(events, spark)
       case u if u.equals("2") || u.toLowerCase().contains("top10productsineachcategory") =>
         top10ProductsInEachCategory.run(events, spark)
       case u if u.equals("3") || u.toLowerCase().contains("top10countriesbymoneyspending") =>
+
+        ip.cache()
+        ipinfo.cache()
+
         top10CountriesByMoneySpending.run(events, ip, ipinfo, spark)
       case _ =>
+
+        ip.cache()
+        ipinfo.cache()
+
         top10ByCategory.run(events, spark)
         top10ProductsInEachCategory.run(events, spark)
         top10CountriesByMoneySpending.run(events, ip, ipinfo, spark)
